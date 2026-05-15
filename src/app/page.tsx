@@ -1,0 +1,196 @@
+'use client';
+
+import React, { useState } from 'react';
+import dynamic from 'next/dynamic';
+import { WeatherSkeleton, PostSkeleton, Skeleton } from "@/components/UI/Skeletons";
+
+// Dynamic imports with high-performance skeletons
+const Scanner = dynamic(() => import("@/components/DiseaseDetection/Scanner"), {
+  loading: () => <Skeleton className="h-[400px] w-full" />,
+  ssr: false
+});
+
+const WeatherDashboard = dynamic(() => import("@/components/Weather/WeatherDashboard"), {
+  loading: () => <WeatherSkeleton />,
+  ssr: false
+});
+
+const CommunityFeed = dynamic(() => import("@/components/Community/Feed"), {
+  loading: () => <div className="space-y-4"><PostSkeleton /><PostSkeleton /></div>,
+  ssr: false
+});
+
+const FertilizerCalculator = dynamic(() => import("@/components/Calculators/FertilizerCalculator"), {
+  loading: () => <Skeleton className="h-64 w-full" />,
+  ssr: false
+});
+
+const CropSearch = dynamic(() => import("@/components/Crops/CropSearch"), {
+  loading: () => <Skeleton className="h-20 w-full" />,
+  ssr: false
+});
+
+import NotificationBell from "@/components/Notifications/NotificationBell";
+import BottomNav from "@/components/Navigation/BottomNav";
+import MobileContainer from "@/components/Layout/MobileContainer";
+import MobileDashboard from "@/components/Dashboard/MobileDashboard";
+import Onboarding from "@/components/Demo/Onboarding";
+import { triggerHaptic } from "@/lib/native/bridge";
+import { User, Settings, ShieldCheck, LogOut, Heart, HelpCircle, Play } from 'lucide-react';
+
+export default function Home() {
+  const [activeTab, setActiveTab] = useState('home');
+  const [showOnboarding, setShowOnboarding] = useState(true);
+  const [demoMode, setDemoMode] = useState(false);
+
+  if (showOnboarding) {
+    return <Onboarding onComplete={() => setShowOnboarding(false)} />;
+  }
+
+  return (
+    <main className="min-h-screen bg-bg-dark selection:bg-primary/30 pb-32 md:pb-0">
+      {/* Demo Mode Badge */}
+      {demoMode && (
+        <div className="bg-accent text-black text-[10px] font-bold uppercase tracking-widest py-1 px-4 text-center sticky top-0 z-[100] flex items-center justify-center gap-2">
+          <Play size={10} fill="currentColor" /> Demo Mode Active • Fake Data Enabled
+        </div>
+      )}
+      {/* Mobile Top Header */}
+      <header className="px-6 py-4 flex justify-between items-center bg-bg-dark/80 backdrop-blur-xl sticky top-0 z-[60] border-b border-white/5 md:hidden">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+            <div className="w-2 h-2 bg-black rounded-full" />
+          </div>
+          <span className="text-lg font-bold font-heading">CropCare</span>
+        </div>
+        <NotificationBell />
+      </header>
+
+      {/* Desktop Navigation */}
+      <nav className="hidden md:flex border-b border-white/5 py-6 sticky top-0 bg-bg-dark/80 backdrop-blur-xl z-50">
+        <div className="max-w-7xl mx-auto px-6 w-full flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
+              <div className="w-3 h-3 bg-black rounded-full" />
+            </div>
+            <span className="text-2xl font-bold font-heading tracking-tight">CropCare <span className="text-primary">AI</span></span>
+          </div>
+          <div className="flex items-center gap-8">
+            <div className="flex items-center gap-8 text-sm font-medium text-text-muted mr-8">
+              <a href="#" onClick={() => setActiveTab('home')} className="hover:text-primary transition-colors">Scanner</a>
+              <a href="#" onClick={() => setActiveTab('alerts')} className="hover:text-primary transition-colors">Weather</a>
+              <a href="#" onClick={() => setActiveTab('community')} className="hover:text-primary transition-colors">Community</a>
+            </div>
+            <button className="btn btn-primary py-2 px-6">Sign In</button>
+          </div>
+        </div>
+      </nav>
+
+      <div className="max-w-7xl mx-auto px-6 py-8 md:py-12">
+        {/* Tab Content */}
+        <div className="space-y-16">
+          {/* Home Tab - Redesigned Dashboard */}
+          {(activeTab === 'home') && (
+            <MobileContainer 
+              title="Farm Overview" 
+              description="Welcome back to your digital farm assistant."
+            >
+              <MobileDashboard onAction={setActiveTab} />
+              <div className="mt-12 hidden md:block">
+                <Scanner />
+              </div>
+            </MobileContainer>
+          )}
+
+          {/* Scan Tab */}
+          {(activeTab === 'scan') && (
+            <MobileContainer 
+              title="Crop Scanner" 
+              description="Capture infected leaves for instant AI diagnosis."
+            >
+              <Scanner />
+            </MobileContainer>
+          )}
+
+          {/* Alerts Tab - Weather & Intelligence */}
+          {(activeTab === 'alerts') && (
+            <MobileContainer 
+              title="Intelligence Hub" 
+              description="Weather, pest alerts, and farming insights."
+            >
+              <WeatherDashboard />
+              <div className="mt-8">
+                <FertilizerCalculator />
+              </div>
+            </MobileContainer>
+          )}
+
+          {/* Community Tab */}
+          {(activeTab === 'community') && (
+            <MobileContainer 
+              title="Farmer Network" 
+              description="Connect with experts and fellow farmers."
+            >
+              <CommunityFeed />
+            </MobileContainer>
+          )}
+
+          {/* Profile Tab placeholder */}
+          {(activeTab === 'profile') && (
+            <MobileContainer title="My Profile" description="Manage your farm and settings.">
+              <div className="space-y-6">
+                <div className="card p-8 flex flex-col items-center text-center">
+                  <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                    <User size={48} className="text-primary" />
+                  </div>
+                  <h3 className="text-2xl font-bold">Ludhiana Farmer</h3>
+                  <p className="text-text-muted text-sm">Punjab, India • Member since 2024</p>
+                </div>
+                
+                <div className="grid grid-cols-1 gap-4">
+                  {[
+                    { 
+                      icon: Play, 
+                      label: demoMode ? 'Deactivate Demo Mode' : 'Activate Demo Mode', 
+                      color: 'text-accent',
+                      onClick: () => { setDemoMode(!demoMode); triggerHaptic(); }
+                    },
+                    { icon: ShieldCheck, label: 'Verified Expert Status', color: 'text-primary' },
+                    { icon: Heart, label: 'Saved Diagnoses', color: 'text-danger' },
+                    { icon: Settings, label: 'App Settings', color: 'text-info' },
+                    { icon: HelpCircle, label: 'Help & Support', color: 'text-accent' },
+                    { icon: LogOut, label: 'Sign Out', color: 'text-text-dim' }
+                  ].map((item: any, i) => (
+                    <button 
+                      key={i} 
+                      onClick={item.onClick}
+                      className="card p-6 flex justify-between items-center hover:bg-white/5 transition-all"
+                    >
+                      <div className="flex items-center gap-4">
+                        <item.icon size={20} className={item.color} />
+                        <span className="font-bold text-sm">{item.label}</span>
+                      </div>
+                      <div className="w-6 h-6 bg-white/5 rounded-lg" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </MobileContainer>
+          )}
+        </div>
+      </div>
+
+      {/* Bottom Navigation for Mobile */}
+      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
+
+      {/* Footer Placeholder */}
+      <footer className="border-t border-white/5 py-12 mt-20">
+        <div className="max-w-7xl mx-auto px-6 text-center">
+          <p className="text-text-dim text-sm">
+            © 2026 CropCare AI. Empowering 1M+ farmers with precision agriculture.
+          </p>
+        </div>
+      </footer>
+    </main>
+  );
+}
