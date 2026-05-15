@@ -12,7 +12,7 @@ const withPWA = withPWAInit({
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Only use static export if explicitly building for mobile/native
-  output: process.env.MOBILE_BUILD === "true" ? 'export' : undefined,
+  output: (process.env.MOBILE_BUILD === "true" ? 'export' : undefined) as "export" | "standalone" | undefined,
   images: {
     unoptimized: true,
   },

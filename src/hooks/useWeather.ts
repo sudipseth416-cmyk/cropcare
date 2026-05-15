@@ -33,45 +33,33 @@ export function useWeather() {
   const [isCached, setIsCached] = useState(false);
 
   const fetchWeather = async (lat?: number, lon?: number) => {
-    const API_KEY = process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY;
-    
-    if (!API_KEY || API_KEY === 'your_key_here') {
-      setWeather(getMockWeather());
-      setLoading(false);
-      setIsCached(true);
-      return;
-    }
-
     try {
       setLoading(true);
-      const url = lat && lon 
-        ? `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`
-        : `https://api.openweathermap.org/data/2.5/weather?q=Ludhiana&appid=${API_KEY}&units=metric`;
+      setError(null);
       
-      const res = await fetch(url);
+      const query = lat && lon ? `lat=${lat}&lon=${lon}` : `q=Ludhiana`;
+      const res = await fetch(`/api/weather?${query}`);
       const data = await res.json();
       
-      if (!res.ok) throw new Error(data.message);
+      if (!res.ok) throw new Error(data.error || "Failed to fetch");
       
       setWeather(data);
       await cacheWeather(data);
       setIsCached(false);
-    } catch (err) {
-      setError("Using offline data.");
+    } catch (err: any) {
+      console.error("Weather fetch error:", err);
+      setError(err.message || "Using offline data.");
+      
+      // Try to load from cache on failure
+      const cached = await getCachedWeather();
+      if (cached) {
+        setWeather(cached.data);
+        setIsCached(true);
+      }
     } finally {
       setLoading(false);
     }
   };
-
-  function getMockWeather() {
-    return {
-      name: "Ludhiana (Demo)",
-      main: { temp: 28.5, humidity: 75, pressure: 1012 },
-      weather: [{ main: "Clouds", description: "broken clouds", icon: "04d" }],
-      wind: { speed: 4.2 },
-      sys: { country: "IN" }
-    };
-  }
 
   useEffect(() => {
     const loadWeather = async () => {
@@ -87,20 +75,15 @@ export function useWeather() {
         console.error("Cache load failed", e);
       }
 
-      // 2. Fetch fresh data
-      navigator.geolocation.getCurrentPosition(async (pos) => {
-        try {
-          const res = await fetch(`/api/weather?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}`);
-          const data = await res.json();
-          setWeather(data);
-          await cacheWeather(data);
-          setIsCached(false);
-        } catch (err) {
-          setError("Failed to fetch fresh weather. Using offline data.");
-        } finally {
-          setLoading(false);
-        }
-      });
+      // 2. Try to get geolocation and fetch
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => fetchWeather(pos.coords.latitude, pos.coords.longitude),
+          () => fetchWeather() // Fallback to default city on permission error
+        );
+      } else {
+        fetchWeather();
+      }
     };
 
     loadWeather();
