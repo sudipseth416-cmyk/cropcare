@@ -1,6 +1,4 @@
-import React from 'react';
 import { CloudRain, Sun, Cloud, Wind, Droplets, Thermometer, AlertTriangle, Calendar } from 'lucide-react';
-import { motion } from 'framer-motion';
 
 export default function WeatherIntel() {
   const forecast = [

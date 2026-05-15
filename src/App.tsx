@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, 
   Leaf, 
@@ -6,7 +6,6 @@ import {
   FlaskConical, 
   MessageSquare, 
   Users, 
-  Bell, 
   Search,
   Camera,
   History,

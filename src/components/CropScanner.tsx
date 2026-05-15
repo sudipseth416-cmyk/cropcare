@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { Camera, Upload, CheckCircle2, AlertCircle, RefreshCw, X, Search, ShieldCheck } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Camera, Upload, CheckCircle2, AlertCircle, X, Search, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface ScanResult {
@@ -16,7 +16,7 @@ export default function CropScanner() {
   const [isScanning, setIsScanning] = useState(false);
   const [scanMode, setScanMode] = useState<'Disease' | 'Pest'>('Disease');
   const [result, setResult] = useState<ScanResult | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {

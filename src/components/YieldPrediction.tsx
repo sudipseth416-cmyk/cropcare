@@ -1,5 +1,4 @@
-import React from 'react';
-import { TrendingUp, BarChart3, PieChart, Info, DollarSign, Target, History } from 'lucide-react';
+import { TrendingUp, Info, DollarSign, Target } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function YieldPrediction() {

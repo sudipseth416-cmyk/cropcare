@@ -1,6 +1,4 @@
-import React from 'react';
-import { Droplets, Calendar, Clock, AlertTriangle, TrendingDown, CheckCircle2, Waves } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Droplets, Calendar, Clock, AlertTriangle, CheckCircle2, Waves } from 'lucide-react';
 
 export default function SmartIrrigation() {
   const schedule = [

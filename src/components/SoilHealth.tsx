@@ -1,5 +1,4 @@
-import React from 'react';
-import { FlaskConical, Droplets, Thermometer, TestTube, CheckCircle2, AlertTriangle, TrendingDown, TrendingUp } from 'lucide-react';
+import { FlaskConical, Droplets, Thermometer, TestTube, CheckCircle2, TrendingDown, TrendingUp } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const NutrientBar = ({ label, value, color, status }: any) => (

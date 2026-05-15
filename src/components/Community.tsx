@@ -1,6 +1,4 @@
-import React from 'react';
 import { MessageSquare, ThumbsUp, Share2, Users, Search, Plus, Award, MoreHorizontal } from 'lucide-react';
-import { motion } from 'framer-motion';
 
 const CommunityPost = ({ author, location, time, content, image, tags, likes, comments }: any) => (
   <div className="card mb-6">
