@@ -49,12 +49,12 @@ export default function NotificationCenter() {
   ]);
 
   useEffect(() => {
-    onMessageListener().then((payload: any) => {
+    const unsubscribe = onMessageListener((payload: any) => {
       if (!payload) return;
       const newNotif: Notification = {
         id: Date.now().toString(),
-        title: payload.notification.title,
-        body: payload.notification.body,
+        title: payload.notification?.title || 'System Notification',
+        body: payload.notification?.body || '',
         type: 'system',
         time: 'Just now',
         read: false
@@ -62,6 +62,10 @@ export default function NotificationCenter() {
       setNotifications(prev => [newNotif, ...prev]);
       triggerHaptic();
     });
+
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe();
+    };
   }, []);
 
   const unreadCount = notifications.filter(n => !n.read).length;

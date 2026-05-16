@@ -19,6 +19,11 @@ const config: Config = {
           card: "#0e1412",
           "card-hover": "#141d1a",
         },
+        text: {
+          main: "#f8fafc",
+          muted: "#94a3b8",
+          dim: "#64748b",
+        },
         accent: "#fbbf24",
         danger: "#ef4444",
         warning: "#f59e0b",

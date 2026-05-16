@@ -16,10 +16,12 @@ export default function ImageUpload({ onImageSelect, onReset, disabled }: ImageU
   const [isDragging, setIsDragging] = useState(false);
   const [qualityReport, setQualityReport] = useState<ImageQualityReport | null>(null);
   const [isValidating, setIsValidating] = useState(false);
+  const [currentFile, setCurrentFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFile = async (file: File) => {
     if (file && file.type.startsWith('image/')) {
+      setCurrentFile(file);
       setIsValidating(true);
       setQualityReport(null);
       
@@ -28,14 +30,18 @@ export default function ImageUpload({ onImageSelect, onReset, disabled }: ImageU
       setIsValidating(false);
 
       if (report.isValid) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setPreview(reader.result as string);
-          onImageSelect(file);
-        };
-        reader.readAsDataURL(file);
+        completeSelection(file);
       }
     }
+  };
+
+  const completeSelection = (file: File) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPreview(reader.result as string);
+      onImageSelect(file);
+    };
+    reader.readAsDataURL(file);
   };
 
   const onDrop = (e: React.DragEvent) => {
@@ -153,10 +159,7 @@ export default function ImageUpload({ onImageSelect, onReset, disabled }: ImageU
               </button>
               <button 
                 onClick={() => { 
-                  // Force allow if the user insists
-                  const reader = new FileReader();
-                  // Note: This logic needs the original file, which we'd need to store in state if we wanted to support 'Skip and Use'
-                  // For now, we just encourage retaking.
+                  if (currentFile) completeSelection(currentFile);
                 }}
                 className="btn btn-ghost border-danger/20 text-danger flex-1"
               >

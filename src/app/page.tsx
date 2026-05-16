@@ -37,6 +37,7 @@ import MobileDashboard from "@/components/Dashboard/MobileDashboard";
 import Onboarding from "@/components/Demo/Onboarding";
 import { triggerHaptic } from "@/lib/native/bridge";
 import { User, Settings, ShieldCheck, LogOut, Heart, HelpCircle, Play } from 'lucide-react';
+import VoiceAssistant from "@/components/VoiceAssistant/VoiceAssistant";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState('home');
@@ -77,7 +78,8 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-8">
             <div className="flex items-center gap-8 text-sm font-medium text-text-muted mr-8">
-              <a href="#" onClick={() => setActiveTab('home')} className="hover:text-primary transition-colors">Scanner</a>
+              <a href="#" onClick={() => setActiveTab('home')} className="hover:text-primary transition-colors">Dashboard</a>
+              <a href="#" onClick={() => setActiveTab('scan')} className="hover:text-primary transition-colors">Scanner</a>
               <a href="#" onClick={() => setActiveTab('alerts')} className="hover:text-primary transition-colors">Weather</a>
               <a href="#" onClick={() => setActiveTab('community')} className="hover:text-primary transition-colors">Community</a>
             </div>
@@ -160,7 +162,7 @@ export default function Home() {
                     { icon: Settings, label: 'App Settings', color: 'text-info' },
                     { icon: HelpCircle, label: 'Help & Support', color: 'text-accent' },
                     { icon: LogOut, label: 'Sign Out', color: 'text-text-dim' }
-                  ].map((item: any, i) => (
+                  ].map((item, i) => (
                     <button 
                       key={i} 
                       onClick={item.onClick}
@@ -191,6 +193,8 @@ export default function Home() {
           </p>
         </div>
       </footer>
+      {/* Voice Assistant */}
+      <VoiceAssistant />
     </main>
   );
 }

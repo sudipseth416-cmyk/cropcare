@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 interface VoiceAssistantProps {
   onCommand: (command: string) => void;
@@ -13,17 +13,22 @@ export function useVoiceAssistant({ onCommand, language: initialLanguage }: Part
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const recognitionRef = useRef<any>(null);
 
   const startListening = useCallback(() => {
-    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+    if (typeof window === 'undefined') return;
+    
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    
+    if (!SpeechRecognition) {
       setError("Speech recognition is not supported in this browser.");
       return;
     }
 
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     const recognition = new SpeechRecognition();
+    recognitionRef.current = recognition;
 
-    recognition.lang = language; // 'hi-IN', 'bn-IN', 'en-IN'
+    recognition.lang = language;
     recognition.continuous = false;
     recognition.interimResults = false;
 
@@ -45,7 +50,7 @@ export function useVoiceAssistant({ onCommand, language: initialLanguage }: Part
   }, [language, onCommand]);
 
   const speak = (text: string, lang: string) => {
-    if (!('speechSynthesis' in window)) return;
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
 
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = lang;
@@ -53,7 +58,9 @@ export function useVoiceAssistant({ onCommand, language: initialLanguage }: Part
   };
 
   const stopListening = () => {
-    // In a real app, you'd store the recognition instance to stop it
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
     setIsListening(false);
   };
 

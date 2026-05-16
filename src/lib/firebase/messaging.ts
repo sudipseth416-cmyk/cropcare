@@ -19,14 +19,11 @@ export const requestNotificationPermission = async () => {
   return null;
 };
 
-export const onMessageListener = () =>
-  new Promise((resolve) => {
-    if (!messaging) {
-      resolve(null);
-      return;
-    }
-    onMessage(messaging, (payload) => {
-      console.log("Message received: ", payload);
-      resolve(payload);
-    });
+export const onMessageListener = (callback: (payload: any) => void) => {
+  if (!messaging) return;
+  
+  return onMessage(messaging, (payload) => {
+    console.log("Message received: ", payload);
+    callback(payload);
   });
+};
