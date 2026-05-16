@@ -1,12 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
-import dynamic from 'next/dynamic';
-
-const VoiceAssistant = dynamic(() => import("@/components/VoiceAssistant/VoiceAssistant"), { ssr: false });
-const ChatBot = dynamic(() => import("@/components/Chat/ChatBot"), { ssr: false });
-const OfflineSync = dynamic(() => import("@/components/Offline/OfflineSync"), { ssr: false });
-const InstallPrompt = dynamic(() => import("@/components/PWA/InstallPrompt"), { ssr: false });
+import ClientOnly from "@/components/Providers/ClientOnly";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -32,11 +27,9 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className={`${inter.variable} ${outfit.variable} antialiased`}>
-        {children}
-        <VoiceAssistant />
-        <ChatBot />
-        <OfflineSync />
-        <InstallPrompt />
+        <ClientOnly>
+          {children}
+        </ClientOnly>
       </body>
     </html>
   );
