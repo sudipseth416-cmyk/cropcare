@@ -39,6 +39,8 @@ export default function FarmingAlerts({ weather }: { weather: WeatherData }) {
     });
   }
 
+  const alertString = JSON.stringify(alerts.map(a => a.message));
+
   useEffect(() => {
     const criticalAlert = alerts.find(a => a.type === 'danger' || a.type === 'warning');
     if (criticalAlert && criticalAlert.message !== lastAlertRef.current) {
@@ -47,7 +49,7 @@ export default function FarmingAlerts({ weather }: { weather: WeatherData }) {
       });
       lastAlertRef.current = criticalAlert.message;
     }
-  }, [alerts, sendNotification]);
+  }, [alertString, sendNotification]);
 
   if (alerts.length === 0) {
     alerts.push({

@@ -38,12 +38,20 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback((profile: Omit<UserProfile, 'isLoggedIn'>) => {
     const newUser = { ...profile, isLoggedIn: true };
     setUser(newUser);
-    localStorage.setItem('cropcare_user', JSON.stringify(newUser));
+    try {
+      localStorage.setItem('cropcare_user', JSON.stringify(newUser));
+    } catch (e) {
+      console.error("Failed to save user to storage", e);
+    }
   }, []);
 
   const logout = useCallback(() => {
     setUser(null);
-    localStorage.removeItem('cropcare_user');
+    try {
+      localStorage.removeItem('cropcare_user');
+    } catch (e) {
+      console.error("Failed to remove user from storage", e);
+    }
   }, []);
 
   return (

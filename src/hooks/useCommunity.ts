@@ -57,8 +57,14 @@ export function useCommunity() {
   }, []);
 
   const savePosts = (newPosts: Post[]) => {
-    setPosts(newPosts);
-    localStorage.setItem('cropcare_posts', JSON.stringify(newPosts));
+    try {
+      setPosts(newPosts);
+      localStorage.setItem('cropcare_posts', JSON.stringify(newPosts));
+    } catch (e) {
+      console.error("Storage full, unable to save post", e);
+      // Fallback: Just update state but don't persist if storage is full
+      setPosts(newPosts);
+    }
   };
 
   const addPost = useCallback((content: string, user: UserProfile | null, image?: string) => {
