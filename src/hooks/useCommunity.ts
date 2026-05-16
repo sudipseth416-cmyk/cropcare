@@ -42,11 +42,17 @@ export function useCommunity() {
   const [posts, setPosts] = useState<Post[]>([]);
 
   useEffect(() => {
-    const saved = localStorage.getItem('cropcare_posts');
-    if (saved) {
-      setPosts(JSON.parse(saved));
-    } else {
+    try {
+      const saved = localStorage.getItem('cropcare_posts');
+      if (saved) {
+        setPosts(JSON.parse(saved));
+      } else {
+        setPosts(INITIAL_POSTS);
+      }
+    } catch (e) {
+      console.error("Failed to load community posts", e);
       setPosts(INITIAL_POSTS);
+      localStorage.removeItem('cropcare_posts');
     }
   }, []);
 

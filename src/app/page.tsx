@@ -56,7 +56,11 @@ export default function Home() {
   }
 
   if (!user?.isLoggedIn) {
-    return <Onboarding onComplete={() => window.location.reload()} />;
+    return (
+      <ClientOnly>
+        <Onboarding onComplete={() => window.location.reload()} />
+      </ClientOnly>
+    );
   }
 
   return (
