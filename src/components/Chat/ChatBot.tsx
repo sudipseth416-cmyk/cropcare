@@ -5,6 +5,8 @@ import { Send, User, Bot, Mic, X, MoreVertical, Phone, Video, Paperclip, CheckCh
 import { motion, AnimatePresence } from 'framer-motion';
 import { getChatHistory, saveChatMessage } from '@/lib/db/indexedDB';
 
+import { getCropCareResponse } from '@/lib/ai/gemini';
+
 interface Message {
   id: string;
   role: 'user' | 'model';
@@ -27,7 +29,7 @@ export default function ChatBot() {
         setMessages([{
           id: '1',
           role: 'model',
-          content: "Welcome to CropCare AI! 🌾\nI'm your expert farming assistant. How can I help you today?",
+          content: "Welcome to CropCare AI! 🌾\nI'm your expert farming assistant. I've been studying your fields—how can I help you optimize your harvest today?",
           timestamp: new Date()
         }]);
       }
@@ -52,33 +54,23 @@ export default function ChatBot() {
 
     setMessages(prev => [...prev, userMsg]);
     saveChatMessage({ ...userMsg, timestamp: userMsg.timestamp.getTime() });
+    const currentInput = input;
     setInput('');
     setIsTyping(true);
 
     try {
-      const API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-      
-      let aiContent = "";
-      if (!API_KEY || API_KEY === 'your_gemini_key_here') {
-        aiContent = "I am in Demo Mode because no API key is provided. How can I help you with your crops today? (Try asking about Rice fertilization or Tomato diseases!)";
-      } else {
-        const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{
-              parts: [{ text: `You are an expert agricultural assistant for an app called CropCare. Provide concise, practical advice for farmers. Query: ${userMsg.content}` }]
-            }]
-          })
-        });
-        const geminiData = await geminiRes.json();
-        aiContent = geminiData.candidates[0].content.parts[0].text;
-      }
+      // Prepare history for Gemini
+      const history = messages.slice(-5).map(m => ({
+        role: m.role,
+        parts: [{ text: m.content }]
+      }));
 
+      const result = await getCropCareResponse(currentInput, history);
+      
       const botMsg: Message = {
         id: (Date.now() + 1).toString(),
         role: 'model',
-        content: aiContent,
+        content: result.error ? result.message : result.text!,
         timestamp: new Date()
       };
       

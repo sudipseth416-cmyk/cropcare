@@ -6,18 +6,36 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
 import { triggerHaptic } from '@/lib/native/bridge';
 
+import { getCropCareResponse } from '@/lib/ai/gemini';
+
 export default function VoiceAssistant() {
+  const [showModal, setShowModal] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [aiResponse, setAiResponse] = useState('');
+
   const { 
     isListening, 
     transcript, 
-    response, 
     startListening, 
     stopListening, 
     language, 
-    setLanguage 
-  } = useVoiceAssistant();
-
-  const [showModal, setShowModal] = useState(false);
+    setLanguage,
+    speak 
+  } = useVoiceAssistant({
+    onCommand: async (text) => {
+      setIsProcessing(true);
+      try {
+        const result = await getCropCareResponse(text);
+        const reply = result.error ? result.message : result.text!;
+        setAiResponse(reply);
+        speak(reply, language);
+      } catch (err) {
+        setAiResponse("I'm sorry, I couldn't process that. Please try again.");
+      } finally {
+        setIsProcessing(false);
+      }
+    }
+  });
 
   const toggleAssistant = () => {
     if (!showModal) {
@@ -94,7 +112,11 @@ export default function VoiceAssistant() {
                   {isListening ? 'Listening Now' : 'Assistant Ready'}
                 </p>
                 <h2 className="text-3xl font-bold leading-tight min-h-[4rem]">
-                  {transcript || "Try saying 'Mausam kaisa hai?'"}
+                  {isProcessing ? (
+                    <span className="text-primary animate-pulse">Thinking...</span>
+                  ) : (
+                    transcript || "Try saying 'Mausam kaisa hai?'"
+                  )}
                 </h2>
               </div>
 
@@ -103,7 +125,7 @@ export default function VoiceAssistant() {
                 {[...Array(12)].map((_, i) => (
                   <motion.div
                     key={i}
-                    animate={isListening ? {
+                    animate={(isListening || isProcessing) ? {
                       height: [20, Math.random() * 80 + 20, 20],
                     } : { height: 8 }}
                     transition={{
@@ -118,7 +140,7 @@ export default function VoiceAssistant() {
 
               <div className="card bg-white/5 border-white/10 p-6 max-w-sm w-full">
                 <p className="text-sm text-text-muted leading-relaxed">
-                  {response || "I can help with crop diseases, fertilizers, and weather alerts in your local language."}
+                  {aiResponse || "I can help with crop diseases, fertilizers, and weather alerts in your local language."}
                 </p>
               </div>
             </div>
