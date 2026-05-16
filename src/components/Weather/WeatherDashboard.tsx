@@ -54,11 +54,11 @@ export default function WeatherDashboard() {
               
               <div className="flex items-center gap-8 mb-10">
                 <h2 className="text-8xl font-bold font-heading tracking-tighter">
-                  {Math.round(weather.main.temp)}°
+                  {weather?.main?.temp ? Math.round(weather.main.temp) : '--'}°
                 </h2>
                 <div>
-                  <p className="text-3xl font-bold text-text-main">{weather.weather[0].main}</p>
-                  <p className="text-text-muted capitalize">{weather.weather[0].description}</p>
+                  <p className="text-3xl font-bold text-text-main">{weather?.weather?.[0]?.main || 'Stable'}</p>
+                  <p className="text-text-muted capitalize">{weather?.weather?.[0]?.description || 'Clear skies'}</p>
                 </div>
               </div>
 
@@ -69,7 +69,7 @@ export default function WeatherDashboard() {
                   </div>
                   <div>
                     <p className="text-[10px] text-text-dim font-bold uppercase">Humidity</p>
-                    <p className="font-bold">{weather.main.humidity}%</p>
+                    <p className="font-bold">{weather?.main?.humidity || '--'}%</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -78,7 +78,7 @@ export default function WeatherDashboard() {
                   </div>
                   <div>
                     <p className="text-[10px] text-text-dim font-bold uppercase">Wind Speed</p>
-                    <p className="font-bold">{weather.wind.speed} km/h</p>
+                    <p className="font-bold">{weather?.wind?.speed || '--'} km/h</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -87,7 +87,7 @@ export default function WeatherDashboard() {
                   </div>
                   <div>
                     <p className="text-[10px] text-text-dim font-bold uppercase">Rainfall</p>
-                    <p className="font-bold">{weather.rain?.['1h'] || 0} mm</p>
+                    <p className="font-bold">{weather?.rain?.['1h'] || 0} mm</p>
                   </div>
                 </div>
               </div>

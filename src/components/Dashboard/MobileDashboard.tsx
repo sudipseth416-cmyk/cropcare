@@ -47,20 +47,20 @@ export default function MobileDashboard({ onAction }: { onAction: (tab: string) 
                 <div className="flex items-center gap-2 text-primary font-bold text-[10px] uppercase tracking-widest">
                   <CloudSun size={14} /> Live Weather
                 </div>
-                <p className="text-3xl font-bold">{weather ? Math.round(weather.main.temp) : '--'}°C</p>
+                <p className="text-3xl font-bold">{weather?.main?.temp ? Math.round(weather.main.temp) : '--'}°C</p>
                 <p className="text-text-muted text-xs">
-                  {weather ? `${weather.weather[0].main} • ${weather.name}` : 'Loading location...'}
+                  {weather?.weather?.[0]?.main ? `${weather.weather[0].main} • ${weather?.name || 'Local Farm'}` : 'Updating location...'}
                 </p>
               </div>
               <div className="flex flex-col items-end gap-2">
                 <div className="flex gap-3">
                   <div className="flex flex-col items-center">
                     <Droplets size={14} className="text-info mb-1" />
-                    <span className="text-[10px] font-bold">{weather?.main.humidity || '--'}%</span>
+                    <span className="text-[10px] font-bold">{weather?.main?.humidity ?? '--'}%</span>
                   </div>
                   <div className="flex flex-col items-center">
                     <Wind size={14} className="text-accent mb-1" />
-                    <span className="text-[10px] font-bold">{weather?.wind.speed || '--'}km/h</span>
+                    <span className="text-[10px] font-bold">{weather?.wind?.speed ?? '--'}km/h</span>
                   </div>
                 </div>
                 <div className="bg-primary/10 p-2 rounded-lg group-hover:bg-primary/20 transition-colors">

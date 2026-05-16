@@ -15,7 +15,7 @@ export default function FarmingAlerts({ weather }: { weather: WeatherData }) {
   const alerts: Alert[] = [];
 
   // Logic for farming alerts
-  if (weather.main.humidity > 70) {
+  if ((weather?.main?.humidity ?? 0) > 70) {
     alerts.push({
       type: 'warning',
       message: 'High humidity detected. Increased risk of fungal diseases. Monitor closely.',
@@ -23,7 +23,7 @@ export default function FarmingAlerts({ weather }: { weather: WeatherData }) {
     });
   }
 
-  if (weather.rain && weather.rain["1h"] && weather.rain["1h"] > 0) {
+  if (weather?.rain && weather?.rain["1h"] && (weather?.rain["1h"] ?? 0) > 0) {
     alerts.push({
       type: 'danger',
       message: 'Active rainfall detected. Deactivate irrigation systems.',
@@ -31,7 +31,7 @@ export default function FarmingAlerts({ weather }: { weather: WeatherData }) {
     });
   }
 
-  if (weather.main.temp > 35) {
+  if ((weather?.main?.temp ?? 0) > 35) {
     alerts.push({
       type: 'warning',
       message: 'Extreme heat alert. Increase irrigation frequency.',
