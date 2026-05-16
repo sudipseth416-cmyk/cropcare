@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { getCachedWeather, cacheWeather } from '@/lib/db/indexedDB';
 import { useUser } from './useUser';
 
@@ -71,8 +71,12 @@ export function useWeather() {
     }
   }, [user?.location]);
 
+  const isInitialLoad = useRef(true);
+
   useEffect(() => {
     if (userLoading) return;
+    if (!isInitialLoad.current) return;
+    isInitialLoad.current = false;
 
     const loadWeather = async () => {
       // 1. Try cache
@@ -85,11 +89,24 @@ export function useWeather() {
         }
       } catch (e) {}
 
-      // 2. Try GPS or Saved Location
+      // 2. Try GPS or Saved Location with Timeout
       if (navigator.geolocation) {
+        const timeoutId = setTimeout(() => {
+          console.warn("Location request timed out, falling back to profile.");
+          fetchWeather();
+        }, 5000);
+
         navigator.geolocation.getCurrentPosition(
-          (pos) => fetchWeather(pos.coords.latitude, pos.coords.longitude),
-          () => fetchWeather()
+          (pos) => {
+            clearTimeout(timeoutId);
+            fetchWeather(pos.coords.latitude, pos.coords.longitude);
+          },
+          (err) => {
+            clearTimeout(timeoutId);
+            console.error("Geolocation error:", err);
+            fetchWeather();
+          },
+          { timeout: 5000 }
         );
       } else {
         fetchWeather();

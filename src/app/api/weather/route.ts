@@ -14,30 +14,29 @@ export async function GET(request: Request) {
       );
       const weatherData = await weatherRes.json();
 
-      // Get city name using free reverse geocoding
       const geoRes = await fetch(
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10`,
         { headers: { 'User-Agent': 'CropCare/1.0' } }
       );
       const geoData = await geoRes.json();
-      const locationName = geoData.address.city || geoData.address.town || geoData.address.village || geoData.address.state || "Your Location";
+      const address = geoData?.address || {};
+      const locationName = address.city || address.town || address.village || address.suburb || address.state || "Your Farm";
 
-      // Map Open-Meteo WMO codes to OpenWeather style for UI compatibility
       return NextResponse.json({
         name: locationName,
         main: {
-          temp: weatherData.current.temperature_2m,
-          humidity: weatherData.current.relative_humidity_2m,
+          temp: weatherData?.current?.temperature_2m ?? 25,
+          humidity: weatherData?.current?.relative_humidity_2m ?? 60,
           pressure: 1013,
         },
         weather: [{
-          main: getWeatherDesc(weatherData.current.weather_code),
+          main: getWeatherDesc(weatherData?.current?.weather_code ?? 0),
           description: "Live from your fields",
           icon: "04d"
         }],
-        wind: { speed: weatherData.current.wind_speed_10m },
-        sys: { country: geoData.address.country_code?.toUpperCase() || "IN" },
-        rain: { "1h": weatherData.current.precipitation }
+        wind: { speed: weatherData?.current?.wind_speed_10m ?? 0 },
+        sys: { country: address.country_code?.toUpperCase() || "IN" },
+        rain: { "1h": weatherData?.current?.precipitation ?? 0 }
       });
     }
 
