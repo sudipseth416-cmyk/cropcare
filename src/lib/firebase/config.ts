@@ -10,9 +10,22 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Initialize Firebase
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+// Check for mandatory config values to prevent crash
+const isConfigValid = !!(firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.appId);
 
-export const messaging = typeof window !== "undefined" ? getMessaging(app) : null;
+// Initialize Firebase defensively
+let app;
+try {
+  if (isConfigValid) {
+    app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+  } else {
+    console.warn("Firebase config is incomplete. Some features like Notifications and Auth will be disabled.");
+    app = getApps().length === 0 ? initializeApp({ apiKey: "empty", projectId: "empty", appId: "empty" }) : getApps()[0];
+  }
+} catch (error) {
+  console.error("Firebase initialization failed:", error);
+}
+
+export const messaging = (typeof window !== "undefined" && isConfigValid) ? getMessaging(app) : null;
 
 export default app;
