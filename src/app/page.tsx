@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { WeatherSkeleton, PostSkeleton, Skeleton } from "@/components/UI/Skeletons";
 
