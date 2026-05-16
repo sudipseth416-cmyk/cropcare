@@ -37,7 +37,6 @@ import MobileDashboard from "@/components/Dashboard/MobileDashboard";
 import Onboarding from "@/components/Demo/Onboarding";
 import { triggerHaptic } from "@/lib/native/bridge";
 import { User, Settings, ShieldCheck, LogOut, Heart, HelpCircle, Play } from 'lucide-react';
-import VoiceAssistant from "@/components/VoiceAssistant/VoiceAssistant";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState('home');
@@ -193,8 +192,6 @@ export default function Home() {
           </p>
         </div>
       </footer>
-      {/* Voice Assistant */}
-      <VoiceAssistant />
     </main>
   );
 }
