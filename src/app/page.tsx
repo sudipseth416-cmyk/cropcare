@@ -46,8 +46,13 @@ export default function Home() {
   const [demoMode, setDemoMode] = useState(false);
   const [isSignInOpen, setIsSignInOpen] = useState(false);
   const { user, logout, loading: userLoading } = useUser();
+  const [mounted, setMounted] = useState(false);
 
-  if (userLoading) {
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted || userLoading) {
     return (
       <div className="fixed inset-0 bg-bg-dark flex items-center justify-center">
         <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
@@ -56,11 +61,7 @@ export default function Home() {
   }
 
   if (!user?.isLoggedIn) {
-    return (
-      <ClientOnly>
-        <Onboarding onComplete={() => window.location.reload()} />
-      </ClientOnly>
-    );
+    return <Onboarding onComplete={() => window.location.reload()} />;
   }
 
   return (
