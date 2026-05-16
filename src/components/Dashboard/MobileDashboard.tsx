@@ -15,7 +15,10 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
+import { useWeather } from '@/hooks/useWeather';
+
 export default function MobileDashboard({ onAction }: { onAction: (tab: string) => void }) {
+  const { weather, loading: weatherLoading } = useWeather();
   const RECENT_SCANS = [
     { id: '1', crop: 'Tomato', status: 'Healthy', date: 'Oct 24', color: 'text-success' },
     { id: '2', crop: 'Wheat', status: 'Infected', date: 'Oct 22', color: 'text-danger' },
@@ -28,30 +31,44 @@ export default function MobileDashboard({ onAction }: { onAction: (tab: string) 
         <motion.div 
           whileTap={{ scale: 0.98 }}
           onClick={() => onAction('alerts')}
-          className="card bg-gradient-to-br from-primary/20 to-bg-card border-primary/20 p-6 flex justify-between items-center group"
+          className="card bg-gradient-to-br from-primary/20 to-bg-card border-primary/20 p-6 flex justify-between items-center group min-h-[110px]"
         >
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 text-primary font-bold text-[10px] uppercase tracking-widest">
-              <CloudSun size={14} /> Live Weather
-            </div>
-            <p className="text-3xl font-bold">28°C</p>
-            <p className="text-text-muted text-xs">Partly Cloudy • Ludhiana</p>
-          </div>
-          <div className="flex flex-col items-end gap-2">
-            <div className="flex gap-3">
-              <div className="flex flex-col items-center">
-                <Droplets size={14} className="text-info mb-1" />
-                <span className="text-[10px] font-bold">65%</span>
+          {weatherLoading ? (
+             <div className="flex items-center gap-3 animate-pulse">
+               <div className="w-8 h-8 bg-white/10 rounded-full" />
+               <div className="space-y-2">
+                 <div className="w-16 h-4 bg-white/10 rounded" />
+                 <div className="w-24 h-3 bg-white/5 rounded" />
+               </div>
+             </div>
+          ) : (
+            <>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 text-primary font-bold text-[10px] uppercase tracking-widest">
+                  <CloudSun size={14} /> Live Weather
+                </div>
+                <p className="text-3xl font-bold">{weather ? Math.round(weather.main.temp) : '--'}°C</p>
+                <p className="text-text-muted text-xs">
+                  {weather ? `${weather.weather[0].main} • ${weather.name}` : 'Loading location...'}
+                </p>
               </div>
-              <div className="flex flex-col items-center">
-                <Wind size={14} className="text-accent mb-1" />
-                <span className="text-[10px] font-bold">12km/h</span>
+              <div className="flex flex-col items-end gap-2">
+                <div className="flex gap-3">
+                  <div className="flex flex-col items-center">
+                    <Droplets size={14} className="text-info mb-1" />
+                    <span className="text-[10px] font-bold">{weather?.main.humidity || '--'}%</span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <Wind size={14} className="text-accent mb-1" />
+                    <span className="text-[10px] font-bold">{weather?.wind.speed || '--'}km/h</span>
+                  </div>
+                </div>
+                <div className="bg-primary/10 p-2 rounded-lg group-hover:bg-primary/20 transition-colors">
+                  <ArrowRight size={16} className="text-primary" />
+                </div>
               </div>
-            </div>
-            <div className="bg-primary/10 p-2 rounded-lg group-hover:bg-primary/20 transition-colors">
-              <ArrowRight size={16} className="text-primary" />
-            </div>
-          </div>
+            </>
+          )}
         </motion.div>
       </div>
 

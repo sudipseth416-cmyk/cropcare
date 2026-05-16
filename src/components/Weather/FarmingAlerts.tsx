@@ -1,8 +1,7 @@
-'use client';
-
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { AlertTriangle, Info, Droplets, CloudRain } from 'lucide-react';
 import { WeatherData } from '@/hooks/useWeather';
+import { useNotifications } from '@/hooks/useNotifications';
 
 interface Alert {
   type: 'warning' | 'info' | 'danger';
@@ -11,13 +10,15 @@ interface Alert {
 }
 
 export default function FarmingAlerts({ weather }: { weather: WeatherData }) {
+  const { sendNotification, requestPermission, permission } = useNotifications();
+  const lastAlertRef = useRef<string | null>(null);
   const alerts: Alert[] = [];
 
   // Logic for farming alerts
   if (weather.main.humidity > 70) {
     alerts.push({
       type: 'warning',
-      message: 'High humidity detected. Increased risk of fungal diseases (e.g., Blight). Monitor closely.',
+      message: 'High humidity detected. Increased risk of fungal diseases. Monitor closely.',
       icon: Droplets
     });
   }
@@ -25,7 +26,7 @@ export default function FarmingAlerts({ weather }: { weather: WeatherData }) {
   if (weather.rain && weather.rain["1h"] && weather.rain["1h"] > 0) {
     alerts.push({
       type: 'danger',
-      message: 'Active rainfall detected. Irrigation systems should be deactivated immediately.',
+      message: 'Active rainfall detected. Deactivate irrigation systems.',
       icon: CloudRain
     });
   }
@@ -33,32 +34,44 @@ export default function FarmingAlerts({ weather }: { weather: WeatherData }) {
   if (weather.main.temp > 35) {
     alerts.push({
       type: 'warning',
-      message: 'Extreme heat alert. Consider increasing irrigation frequency to prevent crop wilting.',
+      message: 'Extreme heat alert. Increase irrigation frequency.',
       icon: AlertTriangle
     });
   }
 
-  if (weather.wind.speed > 5) {
-    alerts.push({
-      type: 'info',
-      message: 'Strong winds detected. Avoid pesticide or fertilizer spraying to prevent drift.',
-      icon: Info
-    });
-  }
+  useEffect(() => {
+    const criticalAlert = alerts.find(a => a.type === 'danger' || a.type === 'warning');
+    if (criticalAlert && criticalAlert.message !== lastAlertRef.current) {
+      sendNotification(`CropCare Alert: ${criticalAlert.type === 'danger' ? 'Emergency' : 'Warning'}`, {
+        body: criticalAlert.message,
+      });
+      lastAlertRef.current = criticalAlert.message;
+    }
+  }, [alerts, sendNotification]);
 
   if (alerts.length === 0) {
     alerts.push({
       type: 'info',
-      message: 'Weather conditions are stable for standard farming activities.',
+      message: 'Weather conditions are stable for farming.',
       icon: Info
     });
   }
 
   return (
     <div className="space-y-4">
-      <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-        <AlertTriangle size={20} className="text-warning" /> AI Farming Alerts
-      </h3>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-xl font-bold flex items-center gap-2">
+          <AlertTriangle size={20} className="text-warning" /> AI Farming Alerts
+        </h3>
+        {permission !== 'granted' && (
+          <button 
+            onClick={() => requestPermission()}
+            className="text-[10px] font-bold text-primary uppercase border border-primary/20 px-2 py-1 rounded-lg"
+          >
+            Enable Popups
+          </button>
+        )}
+      </div>
       {alerts.map((alert, i) => (
         <div 
           key={i} 

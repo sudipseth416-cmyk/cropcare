@@ -19,6 +19,8 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
 };
 
+import { UserProvider } from "@/context/UserContext";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -27,9 +29,11 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className={`${inter.variable} ${outfit.variable} antialiased`}>
-        <ClientOnly>
-          {children}
-        </ClientOnly>
+        <UserProvider>
+          <ClientOnly>
+            {children}
+          </ClientOnly>
+        </UserProvider>
       </body>
     </html>
   );

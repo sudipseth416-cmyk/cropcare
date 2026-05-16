@@ -38,17 +38,30 @@ import Onboarding from "@/components/Demo/Onboarding";
 import { triggerHaptic } from "@/lib/native/bridge";
 import { User, Settings, ShieldCheck, LogOut, Heart, HelpCircle, Play } from 'lucide-react';
 
+import { useUser } from "@/hooks/useUser";
+import SignInModal from "@/components/Auth/SignInModal";
+
 export default function Home() {
   const [activeTab, setActiveTab] = useState('home');
-  const [showOnboarding, setShowOnboarding] = useState(true);
   const [demoMode, setDemoMode] = useState(false);
+  const [isSignInOpen, setIsSignInOpen] = useState(false);
+  const { user, logout, loading: userLoading } = useUser();
 
-  if (showOnboarding) {
-    return <Onboarding onComplete={() => setShowOnboarding(false)} />;
+  if (userLoading) {
+    return (
+      <div className="fixed inset-0 bg-bg-dark flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!user?.isLoggedIn) {
+    return <Onboarding onComplete={() => window.location.reload()} />;
   }
 
   return (
     <main className="min-h-screen bg-bg-dark selection:bg-primary/30 pb-32 md:pb-0">
+      <SignInModal isOpen={isSignInOpen} onClose={() => setIsSignInOpen(false)} />
       {/* Demo Mode Badge */}
       {demoMode && (
         <div className="bg-accent text-black text-[10px] font-bold uppercase tracking-widest py-1 px-4 text-center sticky top-0 z-[100] flex items-center justify-center gap-2">
@@ -82,7 +95,16 @@ export default function Home() {
               <a href="#" onClick={() => setActiveTab('alerts')} className="hover:text-primary transition-colors">Weather</a>
               <a href="#" onClick={() => setActiveTab('community')} className="hover:text-primary transition-colors">Community</a>
             </div>
-            <button className="btn btn-primary py-2 px-6">Sign In</button>
+            {user?.isLoggedIn ? (
+              <button onClick={() => setActiveTab('profile')} className="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-xl border border-white/10">
+                <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center text-primary">
+                   <User size={16} />
+                </div>
+                <span className="text-sm font-bold">{user.name}</span>
+              </button>
+            ) : (
+              <button onClick={() => setIsSignInOpen(true)} className="btn btn-primary py-2 px-6">Sign In</button>
+            )}
           </div>
         </div>
       </nav>
@@ -93,8 +115,8 @@ export default function Home() {
           {/* Home Tab - Redesigned Dashboard */}
           {(activeTab === 'home') && (
             <MobileContainer 
-              title="Farm Overview" 
-              description="Welcome back to your digital farm assistant."
+              title={user?.isLoggedIn ? `Namaste, ${user.name.split(' ')[0]}` : "Farm Overview"} 
+              description={user?.isLoggedIn ? `Personalized alerts for your farm in ${user.location}.` : "Welcome back to your digital farm assistant."}
             >
               <MobileDashboard onAction={setActiveTab} />
               <div className="mt-12 hidden md:block">
@@ -144,8 +166,8 @@ export default function Home() {
                   <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mb-4">
                     <User size={48} className="text-primary" />
                   </div>
-                  <h3 className="text-2xl font-bold">Ludhiana Farmer</h3>
-                  <p className="text-text-muted text-sm">Punjab, India • Member since 2024</p>
+                  <h3 className="text-2xl font-bold">{user?.isLoggedIn ? user.name : "Guest Farmer"}</h3>
+                  <p className="text-text-muted text-sm">{user?.isLoggedIn ? `${user.location} • ${user.email}` : "Punjab, India • Guest Access"}</p>
                 </div>
                 
                 <div className="grid grid-cols-1 gap-4">
@@ -160,7 +182,12 @@ export default function Home() {
                     { icon: Heart, label: 'Saved Diagnoses', color: 'text-danger' },
                     { icon: Settings, label: 'App Settings', color: 'text-info' },
                     { icon: HelpCircle, label: 'Help & Support', color: 'text-accent' },
-                    { icon: LogOut, label: 'Sign Out', color: 'text-text-dim' }
+                    { 
+                      icon: LogOut, 
+                      label: 'Sign Out', 
+                      color: 'text-text-dim',
+                      onClick: () => { logout(); window.location.reload(); }
+                    }
                   ].map((item, i) => (
                     <button 
                       key={i} 

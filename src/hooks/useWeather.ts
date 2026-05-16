@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getCachedWeather, cacheWeather } from '@/lib/db/indexedDB';
+import { useUser } from './useUser';
 
 export interface WeatherData {
   name: string;
@@ -27,17 +28,27 @@ export interface WeatherData {
 }
 
 export function useWeather() {
+  const { user, loading: userLoading } = useUser();
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isCached, setIsCached] = useState(false);
 
-  const fetchWeather = async (lat?: number, lon?: number) => {
+  const fetchWeather = useCallback(async (lat?: number, lon?: number) => {
     try {
       setLoading(true);
       setError(null);
       
-      const query = lat && lon ? `lat=${lat}&lon=${lon}` : `q=Ludhiana`;
+      let query = '';
+      // Prioritize the User's Saved Farm Location
+      if (user?.location) {
+        query = `q=${user.location}`;
+      } else if (lat && lon) {
+        query = `lat=${lat}&lon=${lon}`;
+      } else {
+        query = `q=Delhi`;
+      }
+
       const res = await fetch(`/api/weather?${query}`);
       const data = await res.json();
       
@@ -50,7 +61,6 @@ export function useWeather() {
       console.error("Weather fetch error:", err);
       setError(err.message || "Using offline data.");
       
-      // Try to load from cache on failure
       const cached = await getCachedWeather();
       if (cached) {
         setWeather(cached.data);
@@ -59,27 +69,27 @@ export function useWeather() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.location]);
 
   useEffect(() => {
+    if (userLoading) return;
+
     const loadWeather = async () => {
-      // 1. Try to load from cache first
+      // 1. Try cache
       try {
         const cached = await getCachedWeather();
-        if (cached && Date.now() - cached.timestamp < 3600000) { // 1 hour TTL
+        if (cached && Date.now() - cached.timestamp < 3600000) {
           setWeather(cached.data);
           setIsCached(true);
           setLoading(false);
         }
-      } catch (e) {
-        console.error("Cache load failed", e);
-      }
+      } catch (e) {}
 
-      // 2. Try to get geolocation and fetch
+      // 2. Try GPS or Saved Location
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (pos) => fetchWeather(pos.coords.latitude, pos.coords.longitude),
-          () => fetchWeather() // Fallback to default city on permission error
+          () => fetchWeather()
         );
       } else {
         fetchWeather();
@@ -87,7 +97,7 @@ export function useWeather() {
     };
 
     loadWeather();
-  }, []);
+  }, [userLoading, user?.location, fetchWeather]);
 
   return { weather, loading, error, isCached, refresh: fetchWeather };
 }

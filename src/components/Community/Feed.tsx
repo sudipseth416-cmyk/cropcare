@@ -5,61 +5,57 @@ import PostCard from './PostCard';
 import { Plus, Image as ImageIcon, Send, X, MapPin } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { triggerHaptic } from '@/lib/native/bridge';
-
-const DUMMY_POSTS = [
-  {
-    id: '1',
-    author: 'Rajesh Kumar',
-    location: 'Punjab',
-    content: 'Observing some yellowing on the edges of my wheat leaves. Is this early stage Rust or just nitrogen deficiency? Any experts here?',
-    image: 'https://images.unsplash.com/photo-1594751439417-df7a627f749a?auto=format&fit=crop&q=80&w=800',
-    likes: 24,
-    comments: 8,
-    time: '2h ago',
-    isExpert: false
-  },
-  {
-    id: '2',
-    author: 'Dr. Amit Sharma',
-    location: 'Delhi (Agri Expert)',
-    content: 'The recent weather alerts indicate high humidity. Please ensure your paddy fields have proper drainage to avoid root rot.',
-    likes: 156,
-    comments: 42,
-    time: '5h ago',
-    isExpert: true
-  }
-];
+import { useCommunity } from '@/hooks/useCommunity';
+import { useUser } from '@/hooks/useUser';
 
 export default function CommunityFeed() {
+  const { posts, addPost } = useCommunity();
+  const { user } = useUser();
   const [showCreate, setShowCreate] = useState(false);
   const [postContent, setPostContent] = useState('');
+  const [image, setImage] = useState<string | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImage(reader.result as string);
+        triggerHaptic();
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleCreatePost = () => {
+    if (!postContent.trim() && !image) return;
+    addPost(postContent, user, image || undefined);
     setShowCreate(false);
     setPostContent('');
+    setImage(null);
     triggerHaptic();
-    // In real app, push to state/DB
   };
 
   return (
     <div className="max-w-xl mx-auto -mx-6 md:mx-auto">
-      {/* Quick Post Trigger - Instagram style */}
+      {/* Quick Post Trigger */}
       <div className="bg-bg-card p-4 border-b border-white/5 flex items-center gap-4 mb-2 md:rounded-3xl md:mb-8">
         <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-primary font-bold">
-          Y
+          {user?.isLoggedIn ? user.name[0] : 'G'}
         </div>
         <button 
           onClick={() => setShowCreate(true)}
           className="flex-1 text-left py-3 px-6 bg-white/5 rounded-full text-text-dim text-sm"
         >
-          What's happening on your farm?
+          Share something with fellow farmers...
         </button>
-        <button className="text-primary"><ImageIcon size={24} /></button>
+        <button onClick={() => setShowCreate(true)} className="text-primary"><ImageIcon size={24} /></button>
       </div>
 
       {/* Post Feed */}
       <div className="space-y-0 md:space-y-4">
-        {DUMMY_POSTS.map(post => (
+        {posts.map(post => (
           <PostCard key={post.id} post={post} />
         ))}
       </div>
@@ -72,7 +68,7 @@ export default function CommunityFeed() {
         <Plus size={28} />
       </button>
 
-      {/* Create Post Modal / Bottom Sheet */}
+      {/* Create Post Modal */}
       <AnimatePresence>
         {showCreate && (
           <>
@@ -87,7 +83,7 @@ export default function CommunityFeed() {
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
-              className="fixed bottom-0 left-0 right-0 z-[600] bg-bg-card rounded-t-[40px] p-8 border-t border-white/10 flex flex-col gap-6"
+              className="fixed bottom-0 left-0 right-0 z-[600] bg-bg-card rounded-t-[40px] p-8 border-t border-white/10 flex flex-col gap-6 max-h-[90vh] overflow-y-auto"
             >
               <div className="w-12 h-1 bg-white/10 rounded-full mx-auto" />
               <div className="flex justify-between items-center">
@@ -99,17 +95,40 @@ export default function CommunityFeed() {
                 value={postContent}
                 onChange={(e) => setPostContent(e.target.value)}
                 placeholder="Share your farming experience..."
-                className="w-full bg-white/5 border border-white/5 rounded-2xl p-4 min-h-[150px] text-white focus:outline-none focus:border-primary/50"
+                className="w-full bg-white/5 border border-white/5 rounded-2xl p-4 min-h-[120px] text-white focus:outline-none focus:border-primary/50 text-sm"
               />
+
+              {image && (
+                <div className="relative rounded-2xl overflow-hidden aspect-video bg-black/40">
+                  <img src={image} alt="Upload preview" className="w-full h-full object-cover" />
+                  <button 
+                    onClick={() => setImage(null)}
+                    className="absolute top-2 right-2 p-1.5 bg-black/60 rounded-full text-white backdrop-blur-md"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              )}
 
               <div className="flex justify-between items-center">
                 <div className="flex gap-4 text-text-dim">
-                  <button className="flex items-center gap-2 text-xs font-bold uppercase"><ImageIcon size={18} /> Photo</button>
-                  <button className="flex items-center gap-2 text-xs font-bold uppercase"><MapPin size={18} /> Location</button>
+                  <input 
+                    type="file"
+                    accept="image/*"
+                    hidden
+                    ref={fileInputRef}
+                    onChange={handleImageUpload}
+                  />
+                  <button 
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex items-center gap-2 text-xs font-bold uppercase hover:text-primary transition-colors"
+                  >
+                    <ImageIcon size={18} /> {image ? 'Change Photo' : 'Add Photo'}
+                  </button>
                 </div>
                 <button 
                   onClick={handleCreatePost}
-                  disabled={!postContent.trim()}
+                  disabled={!postContent.trim() && !image}
                   className="btn btn-primary px-8 py-3 flex items-center gap-2 shadow-lg shadow-primary/20"
                 >
                   Post <Send size={16} />

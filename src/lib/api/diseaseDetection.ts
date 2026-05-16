@@ -1,3 +1,5 @@
+import { CROPCARE_PROMPT } from '../ai/gemini';
+
 export interface DetectionResult {
   diseaseName: string;
   confidence: number;
@@ -5,72 +7,74 @@ export interface DetectionResult {
   symptoms: string[];
   treatment: string[];
   prevention: string[];
+  description?: string;
   error?: string;
 }
 
-const HUGGING_FACE_API_URL = "https://api-inference.huggingface.co/models/linkandzel/plant-disease-classification";
-
 export async function detectDisease(image: File): Promise<DetectionResult> {
-  const HF_TOKEN = process.env.NEXT_PUBLIC_HF_TOKEN;
+  const API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
 
-  if (!HF_TOKEN || HF_TOKEN === 'your_token_here') {
-    // Demo Mode for presentation
-    await new Promise(r => setTimeout(r, 2000));
-    return {
-      diseaseName: "Tomato Early Blight",
-      confidence: 94,
-      ...getDiseaseInsights("Tomato Early Blight")
-    };
+  if (!API_KEY || API_KEY === 'your_gemini_key_here') {
+    throw new Error("Gemini API key is missing. Please add it to .env.local");
   }
 
-  const bytes = await image.arrayBuffer();
+  try {
+    // Convert image to base64
+    const base64Image = await fileToBase64(image);
+    const base64Data = base64Image.split(',')[1];
 
-  const response = await fetch(HUGGING_FACE_API_URL, {
-    headers: {
-      Authorization: `Bearer ${HF_TOKEN}`,
-      "Content-Type": "application/octet-stream",
-    },
-    method: "POST",
-    body: bytes,
-  });
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{
+          parts: [
+            { text: `${CROPCARE_PROMPT}\n\nAnalyze this crop image and provide a diagnosis in JSON format. 
+            Identify the crop, the disease (or if it's healthy), confidence score (0-100), severity, symptoms, organic/chemical treatments, and prevention steps.
+            
+            Return ONLY a JSON object with this structure:
+            {
+              "diseaseName": "Name of disease",
+              "confidence": 95,
+              "severity": "Low" | "Medium" | "High" | "Emergency",
+              "symptoms": ["list", "of", "symptoms"],
+              "treatment": ["list", "of", "treatments"],
+              "prevention": ["list", "of", "prevention", "steps"],
+              "description": "Brief explanation of what you see"
+            }` },
+            {
+              inline_data: {
+                mime_type: image.type,
+                data: base64Data
+              }
+            }
+          ]
+        }]
+      })
+    });
 
-  if (!response.ok) {
+    if (!response.ok) {
+      throw new Error("Failed to reach Gemini brain");
+    }
+
     const data = await response.json();
-    throw new Error(data.error || 'Failed to detect disease');
+    const textResponse = data.candidates[0].content.parts[0].text;
+    
+    // Clean JSON response (Gemini sometimes adds markdown blocks)
+    const jsonStr = textResponse.replace(/```json|```/g, '').trim();
+    return JSON.parse(jsonStr) as DetectionResult;
+
+  } catch (error) {
+    console.error("Detection Error:", error);
+    throw new Error("The AI brain couldn't analyze this image. Please try a clearer photo.");
   }
-
-  const result = await response.json();
-  const topResult = result[0];
-  const diseaseName = topResult.label.replace(/_/g, ' ');
-  const confidence = Math.round(topResult.score * 100);
-
-  return {
-    diseaseName,
-    confidence,
-    ...getDiseaseInsights(diseaseName)
-  };
 }
 
-function getDiseaseInsights(disease: string) {
-  const data: Record<string, any> = {
-    "Tomato Early Blight": {
-      severity: "High",
-      symptoms: ["Small brown spots on older leaves", "Target-like concentric rings"],
-      treatment: ["Apply Mancozeb fungicide", "Remove infected lower leaves"],
-      prevention: ["Crop rotation", "Drip irrigation"]
-    },
-    "Healthy": {
-      severity: "Low",
-      symptoms: ["Green foliage", "No lesions"],
-      treatment: ["Regular NPK fertilization"],
-      prevention: ["Consistent watering"]
-    }
-  };
-
-  return data[disease] || {
-    severity: "Medium",
-    symptoms: ["Discoloration detected"],
-    treatment: ["Apply organic fungicide"],
-    prevention: ["Ensure proper spacing"]
-  };
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = error => reject(error);
+  });
 }
