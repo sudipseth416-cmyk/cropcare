@@ -81,7 +81,7 @@ Run the development server:
 ```bash
 npm run dev
 ```
-Open [http://localhost:3000](http://localhost:3000) to see the result.
+Open https://cropcare-beta.vercel.app/ to see the result.
 
 ---
 
