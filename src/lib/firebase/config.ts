@@ -1,5 +1,7 @@
 import { initializeApp, getApps } from "firebase/app";
 import { getMessaging } from "firebase/messaging";
+import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -27,5 +29,7 @@ try {
 }
 
 export const messaging = (typeof window !== "undefined" && isConfigValid) ? getMessaging(app) : null;
+export const db = app ? getFirestore(app) : null;
+export const storage = app ? getStorage(app) : null;
 
 export default app;

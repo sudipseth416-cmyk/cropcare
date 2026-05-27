@@ -2,38 +2,60 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, RefreshCcw, AlertTriangle, Camera, ArrowRight } from 'lucide-react';
+import { Sparkles, RefreshCcw, AlertTriangle, Camera, Layers, Sprout } from 'lucide-react';
 import ImageUpload from './ImageUpload';
 import AnalysisResult from './AnalysisResult';
 import CameraScanner from './CameraScanner';
+import MultiImageUpload from './MultiImageUpload';
+import FieldAnalysisResultView from './FieldAnalysisResultView';
 import { detectDisease, DetectionResult } from '@/lib/api/diseaseDetection';
+import { useFieldAnalysis } from '@/hooks/useFieldAnalysis';
 
 export default function Scanner() {
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [result, setResult] = useState<DetectionResult | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  // Mode toggle: 'single' | 'field'
+  const [scanMode, setScanMode] = useState<'single' | 'field'>('single');
+
+  // Single Image State
+  const [isAnalyzingSingle, setIsAnalyzingSingle] = useState(false);
+  const [singleResult, setSingleResult] = useState<DetectionResult | null>(null);
+  const [singleError, setSingleError] = useState<string | null>(null);
   const [showCamera, setShowCamera] = useState(false);
 
-  const handleImageSelect = async (file: File) => {
-    setIsAnalyzing(true);
-    setError(null);
-    setResult(null);
+  // Multi-Image Hook
+  const fieldAnalysis = useFieldAnalysis();
+
+  const handleSingleImageSelect = async (file: File) => {
+    setIsAnalyzingSingle(true);
+    setSingleError(null);
+    setSingleResult(null);
     setShowCamera(false);
 
     try {
       const data = await detectDisease(file);
-      setResult(data);
+      setSingleResult(data);
     } catch (err: any) {
-      setError(err.message || 'Something went wrong during analysis');
+      setSingleError(err.message || 'Something went wrong during analysis');
     } finally {
-      setIsAnalyzing(false);
+      setIsAnalyzingSingle(false);
     }
   };
 
-  const reset = () => {
-    setResult(null);
-    setError(null);
-    setIsAnalyzing(false);
+  const handleSingleReset = () => {
+    setSingleResult(null);
+    setSingleError(null);
+    setIsAnalyzingSingle(false);
+  };
+
+  const activeResult = scanMode === 'single' ? singleResult : fieldAnalysis.result;
+  const isAnalyzing = scanMode === 'single' ? isAnalyzingSingle : (fieldAnalysis.isAnalyzing || fieldAnalysis.isSaving);
+  const activeError = scanMode === 'single' ? singleError : fieldAnalysis.error;
+
+  const handleGlobalReset = () => {
+    if (scanMode === 'single') {
+      handleSingleReset();
+    } else {
+      fieldAnalysis.resetAnalysis();
+    }
   };
 
   return (
@@ -41,13 +63,13 @@ export default function Scanner() {
       <AnimatePresence>
         {showCamera && (
           <CameraScanner 
-            onCapture={handleImageSelect} 
+            onCapture={handleSingleImageSelect} 
             onClose={() => setShowCamera(false)} 
           />
         )}
       </AnimatePresence>
 
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-12">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-8">
         <div className="max-w-2xl">
           <motion.div
             initial={{ opacity: 0, x: -20 }}
@@ -61,9 +83,10 @@ export default function Scanner() {
           </h1>
         </div>
         
-        {result && (
+        {activeResult && (
           <button 
-            onClick={reset}
+            type="button"
+            onClick={handleGlobalReset}
             className="btn btn-ghost border-primary/20 text-primary flex items-center gap-2 group text-sm"
           >
             <RefreshCcw size={18} className="group-hover:rotate-180 transition-transform duration-500" />
@@ -72,33 +95,83 @@ export default function Scanner() {
         )}
       </div>
 
+      {/* Mode Selector Switcher */}
+      {!activeResult && !isAnalyzing && (
+        <div className="flex justify-center mb-10">
+          <div className="relative flex bg-white/5 border border-white/10 p-1.5 rounded-[20px] max-w-md w-full">
+            <button
+              type="button"
+              onClick={() => setScanMode('single')}
+              className={`flex-1 flex items-center justify-center gap-2 py-3 text-xs font-bold uppercase tracking-wider rounded-[14px] transition-all z-10 ${scanMode === 'single' ? 'text-black' : 'text-text-muted hover:text-white'}`}
+            >
+              <Sprout size={16} />
+              Single Crop Scan
+            </button>
+            <button
+              type="button"
+              onClick={() => setScanMode('field')}
+              className={`flex-1 flex items-center justify-center gap-2 py-3 text-xs font-bold uppercase tracking-wider rounded-[14px] transition-all z-10 ${scanMode === 'field' ? 'text-black' : 'text-text-muted hover:text-white'}`}
+            >
+              <Layers size={16} />
+              Field-Wide Scan
+            </button>
+            
+            {/* Slide Indicator */}
+            <motion.div
+              layoutId="mode-indicator"
+              className="absolute top-1.5 bottom-1.5 left-1.5 bg-primary rounded-[14px]"
+              animate={{
+                x: scanMode === 'single' ? '0%' : '100%',
+                width: 'calc(50% - 3px)'
+              }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            />
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
         {/* Input Column */}
         <div className="space-y-8">
-          {/* Mobile Camera Trigger */}
-          <div className="md:hidden">
-            <button 
-              onClick={() => setShowCamera(true)}
-              className="w-full py-10 bg-primary rounded-[32px] flex flex-col items-center justify-center gap-4 shadow-xl shadow-primary/20 active:scale-95 transition-transform"
-            >
-              <div className="w-16 h-16 bg-black/10 rounded-full flex items-center justify-center">
-                <Camera size={32} className="text-black" />
+          {scanMode === 'single' ? (
+            <>
+              {/* Mobile Camera Trigger */}
+              <div className="md:hidden">
+                <button 
+                  type="button"
+                  onClick={() => setShowCamera(true)}
+                  className="w-full py-10 bg-primary rounded-[32px] flex flex-col items-center justify-center gap-4 shadow-xl shadow-primary/20 active:scale-95 transition-transform"
+                >
+                  <div className="w-16 h-16 bg-black/10 rounded-full flex items-center justify-center">
+                    <Camera size={32} className="text-black" />
+                  </div>
+                  <span className="text-xl font-bold text-black">Scan Now</span>
+                </button>
+                <div className="flex items-center gap-4 my-8">
+                  <div className="h-px bg-white/5 flex-1" />
+                  <span className="text-[10px] font-bold text-text-dim uppercase tracking-widest">or upload from gallery</span>
+                  <div className="h-px bg-white/5 flex-1" />
+                </div>
               </div>
-              <span className="text-xl font-bold text-black">Scan Now</span>
-            </button>
-            <div className="flex items-center gap-4 my-8">
-              <div className="h-px bg-white/5 flex-1" />
-              <span className="text-[10px] font-bold text-text-dim uppercase tracking-widest">or upload from gallery</span>
-              <div className="h-px bg-white/5 flex-1" />
-            </div>
-          </div>
 
-          <ImageUpload 
-            onImageSelect={handleImageSelect} 
-            onReset={reset}
-            disabled={isAnalyzing}
-          />
+              <ImageUpload 
+                onImageSelect={handleSingleImageSelect} 
+                onReset={handleSingleReset}
+                disabled={isAnalyzingSingle}
+              />
+            </>
+          ) : (
+            <MultiImageUpload 
+              previews={fieldAnalysis.previews}
+              isCompressing={fieldAnalysis.isCompressing}
+              disabled={fieldAnalysis.isAnalyzing}
+              onImageAdd={fieldAnalysis.compressAndAddImage}
+              onImageRemove={fieldAnalysis.removeImage}
+              onAnalyze={fieldAnalysis.startFieldAnalysis}
+            />
+          )}
 
+          {/* Loading Skeletons / States */}
           <AnimatePresence>
             {isAnalyzing && (
               <motion.div
@@ -119,15 +192,21 @@ export default function Scanner() {
                     </div>
                   </div>
                   <div className="flex-1">
-                    <h4 className="font-bold text-lg text-primary animate-pulse leading-none mb-2">Analyzing...</h4>
-                    <p className="text-xs text-text-muted">Scanning for patterns and fungal markers.</p>
+                    <h4 className="font-bold text-lg text-primary animate-pulse leading-none mb-2">
+                      {scanMode === 'single' ? "Analyzing Single Leaf..." : "Analyzing Field Context..."}
+                    </h4>
+                    <p className="text-xs text-text-muted">
+                      {scanMode === 'single' 
+                        ? "Scanning for patterns and fungal markers." 
+                        : "Detecting patterns, calculating spread & generating reports."}
+                    </p>
                   </div>
                 </div>
                 <div className="mt-6 w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
                   <motion.div 
                     initial={{ width: 0 }}
                     animate={{ width: '100%' }}
-                    transition={{ duration: 3, ease: "easeInOut" }}
+                    transition={{ duration: 5, ease: "easeInOut" }}
                     className="bg-primary h-full"
                   />
                 </div>
@@ -135,30 +214,39 @@ export default function Scanner() {
             )}
           </AnimatePresence>
 
-          {error && (
+          {activeError && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               className="p-4 rounded-2xl bg-danger/10 border border-danger/20 flex items-center gap-3 text-danger text-sm font-medium"
             >
               <AlertTriangle size={20} />
-              {error}
+              {activeError}
             </motion.div>
           )}
         </div>
 
         {/* Result Column */}
         <div className="lg:sticky lg:top-32">
-          {result ? (
-            <AnalysisResult result={result} />
+          {activeResult ? (
+            scanMode === 'single' ? (
+              <AnalysisResult result={singleResult as DetectionResult} />
+            ) : (
+              <FieldAnalysisResultView 
+                result={fieldAnalysis.result!} 
+                onReset={fieldAnalysis.resetAnalysis} 
+              />
+            )
           ) : (
             <div className="card h-full flex flex-col items-center justify-center text-center p-12 border-dashed border-2 border-white/5 bg-transparent min-h-[400px]">
               <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6 text-text-dim">
                 <Sparkles size={32} />
               </div>
-              <h3 className="text-xl font-bold text-text-dim">Waiting for Scan</h3>
+              <h3 className="text-xl font-bold text-text-dim">
+                {scanMode === 'single' ? "Waiting for Single Scan" : "Waiting for Field Scan"}
+              </h3>
               <p className="text-text-muted mt-2 max-w-xs text-sm">
-                Diagnosis results and treatment plans will appear here after analysis.
+                Diagnosis results, spread estimation, and fertilizer plans will appear here after collective analysis.
               </p>
             </div>
           )}
