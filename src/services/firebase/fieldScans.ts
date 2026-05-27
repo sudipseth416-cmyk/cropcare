@@ -38,7 +38,7 @@ export async function saveFieldScan(
   try {
     // 1. Upload all images to Storage in parallel
     const uploadPromises = images.map(file => uploadImage(file));
-    const imageURLs = await uploadPromises;
+    const imageURLs = await Promise.all(uploadPromises);
 
     const newScanData = {
       ...analysis,
